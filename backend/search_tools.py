@@ -107,7 +107,8 @@ class CourseSearchTool(Tool):
             source = course_title
             if lesson_num is not None:
                 source += f" - Lesson {lesson_num}"
-            sources.append(source)
+            if source not in sources:  # Several chunks can come from one lesson
+                sources.append(source)
 
             formatted.append(f"{header}\n{doc}")
 

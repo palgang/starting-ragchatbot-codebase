@@ -26,6 +26,9 @@ dev = [
 testpaths = ["backend/tests"]
 pythonpath = ["backend"]
 addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "integration: uses a real ChromaDB and the embedding model (no API calls)",
+]
 
 [tool.black]
 line-length = 88

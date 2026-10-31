@@ -117,7 +117,16 @@ async function sendMessage() {
             })
         });
 
-        if (!response.ok) throw new Error('Query failed');
+        if (!response.ok) {
+            // FastAPI error bodies look like {"detail": "..."}
+            let detail = '';
+            try {
+                detail = (await response.json()).detail || '';
+            } catch (_) {
+                // Body was not JSON; fall back to the status code below
+            }
+            throw new Error(detail || `Query failed (HTTP ${response.status})`);
+        }
 
         const data = await response.json();
         

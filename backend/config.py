@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -11,8 +11,11 @@ class Config:
     """Configuration settings for the RAG system"""
 
     # Anthropic API settings
-    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
-    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
+    # repr=False keeps the key out of logs and test-failure output.
+    ANTHROPIC_API_KEY: str = field(
+        default=os.getenv("ANTHROPIC_API_KEY", ""), repr=False
+    )
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
 
     # Embedding model settings
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
