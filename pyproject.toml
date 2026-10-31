@@ -13,3 +13,37 @@ dependencies = [
     "python-multipart==0.0.20",
     "python-dotenv==1.1.1",
 ]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.2.0",
+    "black>=26.10.1",
+    "ruff>=0.17.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "integration: uses a real ChromaDB and the embedding model (no API calls)",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+extend-exclude = ["docs"]
+
+[tool.ruff.lint]
+# Conservative starting set: real errors (pyflakes) and syntax/runtime-breaking
+# pycodestyle rules. Formatting is handled by black, so style rules are omitted.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# warnings.filterwarnings() must run before the imports in app.py
+"backend/app.py" = ["E402"]

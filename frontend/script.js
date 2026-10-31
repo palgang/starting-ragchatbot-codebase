@@ -3,9 +3,11 @@ const API_URL = '/api';
 
 // Global state
 let currentSessionId = null;
+// Incremented on every "New Chat" so in-flight responses from the old chat can be discarded
+let chatGeneration = 0;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, newChatButton, totalCourses, courseTitles;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,13 +15,49 @@ document.addEventListener('DOMContentLoaded', () => {
     chatMessages = document.getElementById('chatMessages');
     chatInput = document.getElementById('chatInput');
     sendButton = document.getElementById('sendButton');
+    newChatButton = document.getElementById('newChatButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
-    
+
     setupEventListeners();
+    setupThemeToggle();
     createNewSession();
     loadCourseStats();
 });
+
+// Theme Toggle
+function setupThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    if (!themeToggle) return;
+
+    updateThemeToggle(getCurrentTheme(), themeToggle);
+
+    themeToggle.addEventListener('click', () => {
+        const nextTheme = getCurrentTheme() === 'light' ? 'dark' : 'light';
+        applyTheme(nextTheme);
+        updateThemeToggle(nextTheme, themeToggle);
+        try {
+            localStorage.setItem('theme', nextTheme);
+        } catch (e) {
+            // Storage unavailable (private mode, blocked cookies): theme still applies for this page view
+        }
+    });
+}
+
+function getCurrentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+}
+
+// Describe the action the button will perform, so screen readers announce it correctly
+function updateThemeToggle(currentTheme, button) {
+    const label = currentTheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+    button.setAttribute('aria-label', label);
+    button.setAttribute('title', label);
+}
 
 // Event Listeners
 function setupEventListeners() {
@@ -28,8 +66,12 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
+
+    // New chat
+    newChatButton.addEventListener('click', startNewChat);
     
     
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -51,6 +93,10 @@ async function sendMessage() {
     chatInput.disabled = true;
     sendButton.disabled = true;
 
+    // Remember which chat this query belongs to
+    const generation = chatGeneration;
+    const sessionAtSend = currentSessionId;
+
     // Add user message
     addMessage(query, 'user');
 
@@ -71,10 +117,25 @@ async function sendMessage() {
             })
         });
 
-        if (!response.ok) throw new Error('Query failed');
+        if (!response.ok) {
+            // FastAPI error bodies look like {"detail": "..."}
+            let detail = '';
+            try {
+                detail = (await response.json()).detail || '';
+            } catch (_) {
+                // Body was not JSON; fall back to the status code below
+            }
+            throw new Error(detail || `Query failed (HTTP ${response.status})`);
+        }
 
         const data = await response.json();
         
+        // User started a new chat while this query was in flight: discard the answer
+        if (generation !== chatGeneration) {
+            if (!sessionAtSend && data.session_id) deleteSession(data.session_id);
+            return;
+        }
+
         // Update session ID if new
         if (!currentSessionId) {
             currentSessionId = data.session_id;
@@ -85,13 +146,18 @@ async function sendMessage() {
         addMessage(data.answer, 'assistant', data.sources);
 
     } catch (error) {
-        // Replace loading message with error
+        // Replace loading message with error (unless the chat was replaced meanwhile)
         loadingMessage.remove();
-        addMessage(`Error: ${error.message}`, 'assistant');
+        if (generation === chatGeneration) {
+            addMessage(`Error: ${error.message}`, 'assistant');
+        }
     } finally {
-        chatInput.disabled = false;
-        sendButton.disabled = false;
-        chatInput.focus();
+        // Only touch the input if this query still belongs to the visible chat
+        if (generation === chatGeneration) {
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            chatInput.focus();
+        }
     }
 }
 
@@ -150,6 +216,34 @@ async function createNewSession() {
     currentSessionId = null;
     chatMessages.innerHTML = '';
     addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+}
+
+// "+ New Chat": reset the chat window immediately, then delete the old session on the backend
+function startNewChat() {
+    const previousSessionId = currentSessionId;
+
+    chatGeneration++; // invalidates any query still in flight for the old chat
+    chatInput.value = '';
+    chatInput.disabled = false;
+    sendButton.disabled = false;
+    createNewSession();
+    chatInput.focus();
+
+    if (previousSessionId) {
+        deleteSession(previousSessionId); // best-effort; UI is already reset
+    }
+}
+
+// Ask the backend to drop a session's history. Failures are logged, not shown.
+async function deleteSession(sessionId) {
+    try {
+        const response = await fetch(`${API_URL}/session/${encodeURIComponent(sessionId)}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+        console.warn('Failed to delete session:', error);
+    }
 }
 
 // Load course statistics

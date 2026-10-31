@@ -22,6 +22,31 @@
     --focus-ring: rgba(37, 99, 235, 0.2);
     --welcome-bg: #1e3a5f;
     --welcome-border: #2563eb;
+    --error-text: #f87171;
+    --success-text: #4ade80;
+    --theme-transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    color-scheme: dark;
+}
+
+/* Light Theme (set via data-theme="light" on <html>) */
+:root[data-theme="light"] {
+    --primary-color: #2563eb;      /* white text on this: 5.2:1 */
+    --primary-hover: #1d4ed8;
+    --background: #f8fafc;
+    --surface: #ffffff;
+    --surface-hover: #e2e8f0;
+    --text-primary: #0f172a;       /* 17:1 on background */
+    --text-secondary: #475569;     /* 7.5:1 on background */
+    --border-color: #cbd5e1;
+    --user-message: #2563eb;
+    --assistant-message: #e2e8f0;
+    --shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    --focus-ring: rgba(37, 99, 235, 0.25);
+    --welcome-bg: #eff6ff;
+    --welcome-border: #2563eb;
+    --error-text: #b91c1c;
+    --success-text: #15803d;
+    color-scheme: light;
 }
 
 /* Base Styles */
@@ -34,6 +59,89 @@ body {
     overflow: hidden;
     margin: 0;
     padding: 0;
+    transition: var(--theme-transition);
+}
+
+/* Smooth theme switching on the main surfaces */
+.main-content,
+.sidebar,
+.chat-main,
+.chat-container,
+.chat-messages,
+.chat-input-container,
+.message-content,
+.stat-item,
+.suggested-item,
+#chatInput {
+    transition: var(--theme-transition);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--surface-hover);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: rotate(15deg);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+.theme-toggle:focus {
+    outline: none;
+}
+
+.theme-toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    border-color: var(--primary-color);
+}
+
+.theme-toggle svg {
+    position: absolute;
+    transition: opacity 0.3s ease, transform 0.4s ease;
+}
+
+/* Show the moon in dark mode (action: switch to light), the sun in light mode */
+.theme-toggle .icon-sun {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+}
+
+.theme-toggle .icon-moon {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+:root[data-theme="light"] .theme-toggle .icon-sun {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+:root[data-theme="light"] .theme-toggle .icon-moon {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.6);
 }
 
 /* Container - Full Screen */
@@ -428,7 +536,7 @@ header h1 {
 /* Error Message */
 .error-message {
     background: rgba(239, 68, 68, 0.1);
-    color: #f87171;
+    color: var(--error-text);
     padding: 0.75rem 1.25rem;
     border-radius: 8px;
     border: 1px solid rgba(239, 68, 68, 0.2);
@@ -438,7 +546,7 @@ header h1 {
 /* Success Message */
 .success-message {
     background: rgba(34, 197, 94, 0.1);
-    color: #4ade80;
+    color: var(--success-text);
     padding: 0.75rem 1.25rem;
     border-radius: 8px;
     border: 1px solid rgba(34, 197, 94, 0.2);
@@ -489,6 +597,35 @@ header h1 {
 details[open] .stats-header::before,
 details[open] .suggested-header::before {
     transform: rotate(90deg);
+}
+
+/* New Chat Button (styled like the sidebar section headers) */
+.new-chat-button {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.new-chat-button:hover,
+.new-chat-button:focus-visible {
+    color: var(--primary-color);
+    outline: none;
+}
+
+.new-chat-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Course Stats in Sidebar */
@@ -636,6 +773,13 @@ details[open] .suggested-header::before {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .theme-toggle {
+        top: 0.75rem;
+        right: 0.75rem;
+        width: 36px;
+        height: 36px;
+    }
+
     .main-content {
         flex-direction: column;
     }
