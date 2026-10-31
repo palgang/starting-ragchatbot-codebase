@@ -33,6 +33,22 @@ This application is a full-stack web application that enables users to query cou
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
    ```
 
+## Code Quality
+
+The project uses [black](https://black.readthedocs.io/) for formatting and [ruff](https://docs.astral.sh/ruff/) for linting. Both are dev dependencies, so `uv sync` installs them. Settings live in `pyproject.toml`, and `.editorconfig` covers non-Python files.
+
+| Script | What it does |
+|---|---|
+| `./scripts/format.sh` | Reformat all Python code with black |
+| `./scripts/format.sh --check` | Report formatting problems without changing files |
+| `./scripts/lint.sh` | Run ruff lint checks |
+| `./scripts/lint.sh --fix` | Run ruff and apply its safe automatic fixes |
+| `./scripts/check.sh` | Run all checks without modifying files (exits non-zero on failure; suitable for CI) |
+
+Run `./scripts/format.sh` and `./scripts/check.sh` before committing.
+
+---
+
 ## Running the Application
 
 ### Quick Start

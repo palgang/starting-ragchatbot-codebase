@@ -31,3 +31,7 @@ uploads/
 Thumbs.db
 # Pytest
 .pytest_cache/
+# Dev tooling
+.venv/
+.ruff_cache/
+.black_cache/

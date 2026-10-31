@@ -20,7 +20,9 @@ class TestQueryEndpoint:
 
         mock_session_manager.create_session.assert_called_once_with()
 
-    def test_reuses_provided_session_id(self, client, mock_rag_system, mock_session_manager):
+    def test_reuses_provided_session_id(
+        self, client, mock_rag_system, mock_session_manager
+    ):
         response = client.post(
             "/api/query",
             json={"query": "follow-up", "session_id": "existing-session"},
@@ -67,7 +69,9 @@ class TestQueryEndpoint:
         assert response.json() == {"detail": "vector store unavailable"}
 
     def test_session_creation_failure_returns_500(self, client, mock_session_manager):
-        mock_session_manager.create_session.side_effect = RuntimeError("session store down")
+        mock_session_manager.create_session.side_effect = RuntimeError(
+            "session store down"
+        )
 
         response = client.post("/api/query", json={"query": "anything"})
 
@@ -97,7 +101,9 @@ class TestCoursesEndpoint:
         assert response.json() == {"total_courses": 0, "course_titles": []}
 
     def test_analytics_failure_returns_500(self, client, mock_rag_system):
-        mock_rag_system.get_course_analytics.side_effect = RuntimeError("chroma offline")
+        mock_rag_system.get_course_analytics.side_effect = RuntimeError(
+            "chroma offline"
+        )
 
         response = client.get("/api/courses")
 
